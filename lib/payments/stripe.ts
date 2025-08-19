@@ -9,9 +9,8 @@ import {
 
 function getStripe(): Stripe {
   if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error(
-      'STRIPE_SECRET_KEY environment variable is not set. Please configure Stripe to use payment features.'
-    );
+    console.warn('STRIPE_SECRET_KEY not set - payment features will be disabled');
+    return null as any;
   }
   
   if (!stripe) {
@@ -24,6 +23,9 @@ function getStripe(): Stripe {
 }
 
 let stripe: Stripe | null = null;
+
+// Export the stripe instance getter
+export { getStripe as stripe };
 
 export async function createCheckoutSession({
   team,
@@ -38,7 +40,11 @@ export async function createCheckoutSession({
     redirect(`/sign-up?redirect=checkout&priceId=${priceId}`);
   }
 
-  const session = await getStripe().checkout.sessions.create({
+  const stripeInstance = getStripe();
+  if (!stripeInstance) {
+    throw new Error('Stripe not configured');
+  }
+  const session = await stripeInstance.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [
       {

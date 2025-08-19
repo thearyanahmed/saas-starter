@@ -3,8 +3,6 @@ import type { Metadata, Viewport } from 'next';
 import { Manrope } from 'next/font/google';
 import { getUser, getTeamForUser } from '@/lib/db/queries';
 import { ErrorBoundary } from '@/components/error-boundary';
-import { ErrorBoundary } from '@/components/error-boundary';
-import { SWRConfig } from 'swr';
 
 export const metadata: Metadata = {
   title: {
@@ -87,21 +85,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-[100dvh] bg-gray-50">
         <ErrorBoundary>
-          <SWRConfig
-            value={{
-              fallback: {
-                // We do NOT await here
-                // Only components that read this data will suspend
-                '/api/user': getUser(),
-                '/api/team': getTeamForUser()
-              },
-              errorRetryCount: 3,
-              errorRetryInterval: 5000,
-              loadingTimeout: 10000,
-            }}
-          >
-            {children}
-          </SWRConfig>
+          {children}
         </ErrorBoundary>
       </body>
     </html>

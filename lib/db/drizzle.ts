@@ -10,9 +10,8 @@ let db: ReturnType<typeof drizzle> | null = null;
 
 function getDatabase() {
   if (!process.env.POSTGRES_URL) {
-    throw new Error(
-      'POSTGRES_URL environment variable is not set. Please set it to use database features.'
-    );
+    console.warn('POSTGRES_URL not set - database features will be disabled');
+    return null;
   }
 
   if (!client) {
@@ -23,4 +22,3 @@ function getDatabase() {
   return db!;
 }
 
-export { getDatabase as db };

@@ -24,7 +24,13 @@ export async function getUser() {
   }
 
   try {
-    const user = await db()
+    const database = db();
+    if (!database) {
+      console.warn('Database not available');
+      return null;
+    }
+    
+    const user = await database
       .select()
       .from(users)
       .where(and(eq(users.id, sessionData.user.id), isNull(users.deletedAt)))
@@ -42,7 +48,10 @@ export async function getUser() {
 }
 
 export async function getTeamByStripeCustomerId(customerId: string) {
-  const result = await db()
+  const database = db();
+  if (!database) return null;
+  
+  const result = await database
     .select()
     .from(teams)
     .where(eq(teams.stripeCustomerId, customerId))

@@ -3,14 +3,24 @@ import { db } from '@/lib/db/drizzle';
 
 export async function GET() {
   try {
-    // Check database connection
-    await db().execute('SELECT 1');
+    // Check database connection if available
+    const database = db();
+    let dbStatus = 'not configured';
+    
+    if (database) {
+      try {
+        await database.execute('SELECT 1');
+        dbStatus = 'connected';
+      } catch (error) {
+        dbStatus = 'error';
+      }
+    }
     
     return NextResponse.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       services: {
-        database: 'connected',
+        database: dbStatus,
         stripe: process.env.STRIPE_SECRET_KEY ? 'configured' : 'not configured',
       },
     });
@@ -21,7 +31,7 @@ export async function GET() {
       {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
-        error: 'Database connection failed',
+        error: 'Service check failed',
       },
       { status: 503 }
     );
