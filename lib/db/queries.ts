@@ -69,7 +69,13 @@ export async function updateTeamSubscription(
     subscriptionStatus: string;
   }
 ) {
-  await db()
+  const database = db();
+  if (!database) {
+    console.warn('Database not available for subscription update');
+    return;
+  }
+  
+  await database
     .update(teams)
     .set({
       ...subscriptionData,
@@ -79,7 +85,13 @@ export async function updateTeamSubscription(
 }
 
 export async function getUserWithTeam(userId: number) {
-  const result = await db()
+  const database = db();
+  if (!database) {
+    console.warn('Database not available for getUserWithTeam');
+    return null;
+  }
+  
+  const result = await database
     .select({
       user: users,
       teamId: teamMembers.teamId
@@ -98,7 +110,13 @@ export async function getActivityLogs() {
     throw new Error('User not authenticated');
   }
 
-  return await db()
+  const database = db();
+  if (!database) {
+    console.warn('Database not available for activity logs');
+    return [];
+  }
+
+  return await database
     .select({
       id: activityLogs.id,
       action: activityLogs.action,
@@ -120,7 +138,13 @@ export async function getTeamForUser() {
   }
 
   try {
-    const result = await db().query.teamMembers.findFirst({
+    const database = db();
+    if (!database) {
+      console.warn('Database not available, returning null team');
+      return null;
+    }
+    
+    const result = await database.query.teamMembers.findFirst({
       where: eq(teamMembers.userId, user.id),
       with: {
         team: {

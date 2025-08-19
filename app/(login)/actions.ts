@@ -41,13 +41,17 @@ async function logActivity(
   if (teamId === null || teamId === undefined) {
     return;
   }
+  const database = db();
+  if (!database) {
+    return;
+  }
   const newActivity: NewActivityLog = {
     teamId,
     userId,
     action: type,
     ipAddress: ipAddress || ''
   };
-  await db().insert(activityLogs).values(newActivity);
+  await database.insert(activityLogs).values(newActivity);
 }
 
 const signInSchema = z.object({
@@ -58,7 +62,16 @@ const signInSchema = z.object({
 export const signIn = validatedAction(signInSchema, async (data, formData) => {
   const { email, password } = data;
 
-  const userWithTeam = await db()
+  const database = db();
+  if (!database) {
+    return {
+      error: 'Database not available. Please try again later.',
+      email,
+      password
+    };
+  }
+
+  const userWithTeam = await database
     .select({
       user: users,
       team: teams
@@ -115,7 +128,16 @@ const signUpSchema = z.object({
 export const signUp = validatedAction(signUpSchema, async (data, formData) => {
   const { email, password, inviteId } = data;
 
-  const existingUser = await db()
+  const database = db();
+  if (!database) {
+    return {
+      error: 'Database not available. Please try again later.',
+      email,
+      password
+    };
+  }
+
+  const existingUser = await database
     .select()
     .from(users)
     .where(eq(users.email, email))
@@ -137,7 +159,7 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
     role: 'owner' // Default role, will be overridden if there's an invitation
   };
 
-  const [createdUser] = await db().insert(users).values(newUser).returning();
+  const [createdUser] = await database.insert(users).values(newUser).returning();
 
   if (!createdUser) {
     return {
@@ -153,7 +175,7 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
 
   if (inviteId) {
     // Check if there's a valid invitation
-    const [invitation] = await db()
+    const [invitation] = await database
       .select()
       .from(invitations)
       .where(
@@ -169,14 +191,14 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
       teamId = invitation.teamId;
       userRole = invitation.role;
 
-      await db()
+      await database
         .update(invitations)
         .set({ status: 'accepted' })
         .where(eq(invitations.id, invitation.id));
 
       await logActivity(teamId, createdUser.id, ActivityType.ACCEPT_INVITATION);
 
-      [createdTeam] = await db()
+      [createdTeam] = await database
         .select()
         .from(teams)
         .where(eq(teams.id, teamId))
@@ -190,7 +212,7 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
       name: `${email}'s Team`
     };
 
-    [createdTeam] = await db().insert(teams).values(newTeam).returning();
+    [createdTeam] = await database.insert(teams).values(newTeam).returning();
 
     if (!createdTeam) {
       return {
@@ -213,7 +235,7 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
   };
 
   await Promise.all([
-    db().insert(teamMembers).values(newTeamMember),
+    database.insert(teamMembers).values(newTeamMember),
     logActivity(teamId, createdUser.id, ActivityType.SIGN_UP),
     setSession(createdUser)
   ]);
@@ -280,8 +302,18 @@ export const updatePassword = validatedActionWithUser(
     const newPasswordHash = await hashPassword(newPassword);
     const userWithTeam = await getUserWithTeam(user.id);
 
+    const database = db();
+    if (!database) {
+      return {
+        currentPassword,
+        newPassword,
+        confirmPassword,
+        error: 'Database not available. Please try again later.'
+      };
+    }
+
     await Promise.all([
-      db()
+      database
         .update(users)
         .set({ passwordHash: newPasswordHash })
         .where(eq(users.id, user.id)),
@@ -320,8 +352,16 @@ export const deleteAccount = validatedActionWithUser(
       ActivityType.DELETE_ACCOUNT
     );
 
+    const database = db();
+    if (!database) {
+      return {
+        password,
+        error: 'Database not available. Please try again later.'
+      };
+    }
+
     // Soft delete
-    await db()
+    await database
       .update(users)
       .set({
         deletedAt: sql`CURRENT_TIMESTAMP`,
@@ -330,7 +370,7 @@ export const deleteAccount = validatedActionWithUser(
       .where(eq(users.id, user.id));
 
     if (userWithTeam?.teamId) {
-      await db()
+      await database
         .delete(teamMembers)
         .where(
           and(
@@ -356,8 +396,17 @@ export const updateAccount = validatedActionWithUser(
     const { name, email } = data;
     const userWithTeam = await getUserWithTeam(user.id);
 
+    const database = db();
+    if (!database) {
+      return {
+        name,
+        email,
+        error: 'Database not available. Please try again later.'
+      };
+    }
+
     await Promise.all([
-      db().update(users).set({ name, email }).where(eq(users.id, user.id)),
+      database.update(users).set({ name, email }).where(eq(users.id, user.id)),
       logActivity(userWithTeam?.teamId, user.id, ActivityType.UPDATE_ACCOUNT)
     ]);
 
@@ -379,7 +428,12 @@ export const removeTeamMember = validatedActionWithUser(
       return { error: 'User is not part of a team' };
     }
 
-    await db()
+    const database = db();
+    if (!database) {
+      return { error: 'Database not available. Please try again later.' };
+    }
+
+    await database
       .delete(teamMembers)
       .where(
         and(
@@ -413,7 +467,12 @@ export const inviteTeamMember = validatedActionWithUser(
       return { error: 'User is not part of a team' };
     }
 
-    const existingMember = await db()
+    const database = db();
+    if (!database) {
+      return { error: 'Database not available. Please try again later.' };
+    }
+
+    const existingMember = await database
       .select()
       .from(users)
       .leftJoin(teamMembers, eq(users.id, teamMembers.userId))
@@ -427,7 +486,7 @@ export const inviteTeamMember = validatedActionWithUser(
     }
 
     // Check if there's an existing invitation
-    const existingInvitation = await db()
+    const existingInvitation = await database
       .select()
       .from(invitations)
       .where(
@@ -444,7 +503,7 @@ export const inviteTeamMember = validatedActionWithUser(
     }
 
     // Create a new invitation
-    await db().insert(invitations).values({
+    await database.insert(invitations).values({
       teamId: userWithTeam.teamId,
       email,
       role,

@@ -3,7 +3,7 @@ import { db } from '@/lib/db/drizzle';
 import { users, teams, teamMembers } from '@/lib/db/schema';
 import { setSession } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/lib/payments/stripe';
+import { stripe as getStripe } from '@/lib/payments/stripe';
 import Stripe from 'stripe';
 
 export async function GET(request: NextRequest) {
@@ -15,6 +15,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const stripe = getStripe();
+    if (!stripe) {
+      return NextResponse.redirect(new URL('/pricing?error=stripe_unavailable', request.url));
+    }
+
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['customer', 'subscription'],
     });
@@ -54,7 +59,12 @@ export async function GET(request: NextRequest) {
       throw new Error("No user ID found in session's client_reference_id.");
     }
 
-    const user = await db()
+    const database = db();
+    if (!database) {
+      return NextResponse.redirect(new URL('/error?message=database_unavailable', request.url));
+    }
+
+    const user = await database
       .select()
       .from(users)
       .where(eq(users.id, Number(userId)))
@@ -64,7 +74,7 @@ export async function GET(request: NextRequest) {
       throw new Error('User not found in database.');
     }
 
-    const userTeam = await db()
+    const userTeam = await database
       .select({
         teamId: teamMembers.teamId,
       })
@@ -76,7 +86,7 @@ export async function GET(request: NextRequest) {
       throw new Error('User is not associated with any team.');
     }
 
-    await db()
+    await database
       .update(teams)
       .set({
         stripeCustomerId: customerId,

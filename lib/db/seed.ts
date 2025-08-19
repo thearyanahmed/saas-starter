@@ -1,10 +1,16 @@
-import { stripe } from '../payments/stripe';
+import { stripe as getStripe } from '../payments/stripe';
 import { db } from './drizzle';
 import { users, teams, teamMembers } from './schema';
 import { hashPassword } from '@/lib/auth/session';
 
 async function createStripeProducts() {
   console.log('Creating Stripe products and prices...');
+
+  const stripe = getStripe();
+  if (!stripe) {
+    console.warn('Stripe not configured - skipping product creation');
+    return;
+  }
 
   const baseProduct = await stripe.products.create({
     name: 'Base',
@@ -44,7 +50,13 @@ async function seed() {
   const password = 'admin123';
   const passwordHash = await hashPassword(password);
 
-  const [user] = await db
+  const database = db();
+  if (!database) {
+    console.error('Database not available - cannot seed');
+    return;
+  }
+
+  const [user] = await database
     .insert(users)
     .values([
       {
@@ -57,14 +69,14 @@ async function seed() {
 
   console.log('Initial user created.');
 
-  const [team] = await db
+  const [team] = await database
     .insert(teams)
     .values({
       name: 'Test Team',
     })
     .returning();
 
-  await db.insert(teamMembers).values({
+  await database.insert(teamMembers).values({
     teamId: team.id,
     userId: user.id,
     role: 'owner',
