@@ -25,6 +25,12 @@ import {
   validatedAction,
   validatedActionWithUser
 } from '@/lib/auth/middleware';
+import { 
+  emailSchema, 
+  passwordSchema, 
+  nameSchema,
+  validateFormData 
+} from '@/lib/utils/input-sanitization';
 
 async function logActivity(
   teamId: number | null | undefined,
@@ -45,8 +51,8 @@ async function logActivity(
 }
 
 const signInSchema = z.object({
-  email: z.string().email().min(3).max(255),
-  password: z.string().min(8).max(100)
+  email: emailSchema,
+  password: z.string().min(8).max(100) // Don't apply full password validation on sign-in
 });
 
 export const signIn = validatedAction(signInSchema, async (data, formData) => {
@@ -101,8 +107,8 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
 });
 
 const signUpSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+  email: emailSchema,
+  password: passwordSchema,
   inviteId: z.string().optional()
 });
 
@@ -230,7 +236,7 @@ export async function signOut() {
 
 const updatePasswordSchema = z.object({
   currentPassword: z.string().min(8).max(100),
-  newPassword: z.string().min(8).max(100),
+  newPassword: passwordSchema,
   confirmPassword: z.string().min(8).max(100)
 });
 
@@ -339,8 +345,8 @@ export const deleteAccount = validatedActionWithUser(
 );
 
 const updateAccountSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
-  email: z.string().email('Invalid email address')
+  name: nameSchema,
+  email: emailSchema
 });
 
 export const updateAccount = validatedActionWithUser(
@@ -359,7 +365,7 @@ export const updateAccount = validatedActionWithUser(
 );
 
 const removeTeamMemberSchema = z.object({
-  memberId: z.number()
+  memberId: z.coerce.number().positive()
 });
 
 export const removeTeamMember = validatedActionWithUser(
@@ -392,7 +398,7 @@ export const removeTeamMember = validatedActionWithUser(
 );
 
 const inviteTeamMemberSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: emailSchema,
   role: z.enum(['member', 'owner'])
 });
 
