@@ -20,7 +20,7 @@ export default function HomePage() {
               </p>
               <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
                 <a
-                  href="https://vercel.com/templates/next.js/next-js-saas-starter"
+                  href="https://cloud.digitalocean.com/apps/new?i=7ab6e1"
                   target="_blank"
                 >
                   <Button
