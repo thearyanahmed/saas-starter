@@ -31,12 +31,6 @@ import {
   nameSchema,
   validateFormData 
 } from '@/lib/utils/input-sanitization';
-import { 
-  emailSchema, 
-  passwordSchema, 
-  nameSchema,
-  validateFormData 
-} from '@/lib/utils/input-sanitization';
 
 async function logActivity(
   teamId: number | null | undefined,

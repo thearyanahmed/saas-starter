@@ -22,3 +22,5 @@ function getDatabase() {
   return db!;
 }
 
+export { getDatabase as db };
+

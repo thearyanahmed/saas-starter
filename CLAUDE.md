@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Generate migrations**: `npm run db:generate`
 - **Open database studio**: `npm run db:studio`
 
-**Note**: The application can start without a database connection. Database features will be disabled until POSTGRES_URL is configured.
+**Note**: The application can start without a database connection or Stripe configuration. Features will be gracefully disabled until environment variables are configured.
 
 ### Stripe Development
 
@@ -77,14 +77,13 @@ Core entities:
 ### Environment Variables
 
 **Required for full functionality**:
-- `POSTGRES_URL`: Database connection string (optional for basic startup)
 - `AUTH_SECRET`: JWT signing secret
-- `STRIPE_SECRET_KEY`: Stripe API key
-- `STRIPE_WEBHOOK_SECRET`: Stripe webhook secret
 - `BASE_URL`: Application base URL for redirects
 
-**Optional**:
-- `POSTGRES_URL`: Can be omitted for development without database features
+**Optional (features disabled if missing)**:
+- `POSTGRES_URL`: Database connection string - database features disabled without this
+- `STRIPE_SECRET_KEY`: Stripe API key - payment features disabled without this
+- `STRIPE_WEBHOOK_SECRET`: Stripe webhook secret - required for subscription webhooks
 
 ### Data Fetching Patterns
 
@@ -92,12 +91,17 @@ Core entities:
 - API routes provide JSON endpoints for user and team data
 - Server components use direct database queries via Drizzle
 
-### Database Connection Architecture
+### Graceful Degradation Architecture
 
+**Database Connection**:
 - **Lazy loading**: Database connection is initialized only when first accessed
-- **Graceful degradation**: App starts without POSTGRES_URL, database features disabled
 - **Error handling**: Database queries wrapped in try/catch blocks, return null on failure
 - **Connection pattern**: Import `{ db }` from `@/lib/db/drizzle` and call as `db()` function
+
+**Stripe Integration**:
+- **Lazy initialization**: Stripe client created only when needed via `getStripe()` function
+- **Error handling**: Payment functions redirect to pricing page with error parameter
+- **Graceful fallback**: `getStripePrices()` and `getStripeProducts()` return empty arrays on failure
 
 ### Key Files for Common Tasks
 
