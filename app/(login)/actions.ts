@@ -300,6 +300,7 @@ export const updatePassword = validatedActionWithUser(
   }
 );
 
+const deleteAccountSchema = z.object({
   email: emailSchema,
   password: z.string().min(8).max(100) // Don't apply full password validation on sign-in
 });
