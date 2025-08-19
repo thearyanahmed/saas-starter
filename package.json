@@ -12,11 +12,11 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "analyze": "ANALYZE=true npm run build",
-    "db:setup": "npm exec tsx lib/db/setup.ts",
-    "db:seed": "npm exec tsx lib/db/seed.ts",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:setup": "npm run tsx lib/db/setup.ts",
+    "db:seed": "npm run tsx lib/db/seed.ts",
+    "db:generate": "npm run drizzle-kit generate",
+    "db:migrate": "npm run drizzle-kit migrate",
+    "db:studio": "npm run drizzle-kit studio"
   },
   "dependencies": {
     "@tailwindcss/postcss": "4.1.7",
