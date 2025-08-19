@@ -31,6 +31,12 @@ import {
   nameSchema,
   validateFormData 
 } from '@/lib/utils/input-sanitization';
+import { 
+  emailSchema, 
+  passwordSchema, 
+  nameSchema,
+  validateFormData 
+} from '@/lib/utils/input-sanitization';
 
 async function logActivity(
   teamId: number | null | undefined,
@@ -294,8 +300,8 @@ export const updatePassword = validatedActionWithUser(
   }
 );
 
-const deleteAccountSchema = z.object({
-  password: z.string().min(8).max(100)
+  email: emailSchema,
+  password: z.string().min(8).max(100) // Don't apply full password validation on sign-in
 });
 
 export const deleteAccount = validatedActionWithUser(
