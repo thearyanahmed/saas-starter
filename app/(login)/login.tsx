@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useActionState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { CircleIcon, Loader2 } from 'lucide-react';
 import { signIn, signUp } from './actions';
 import { ActionState } from '@/lib/auth/middleware';
 
-export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
+function LoginForm({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect');
   const priceId = searchParams.get('priceId');
@@ -138,5 +138,13 @@ export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
         </div>
       </div>
     </div>
+  );
+}
+
+export function Login({ mode = 'signin' }: { mode?: 'signin' | 'signup' }) {
+  return (
+    <Suspense fallback={<div className="min-h-[100dvh] flex items-center justify-center bg-gray-50"><div className="animate-spin"><Loader2 className="h-8 w-8" /></div></div>}>
+      <LoginForm mode={mode} />
+    </Suspense>
   );
 }
