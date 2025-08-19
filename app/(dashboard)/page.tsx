@@ -28,7 +28,7 @@ export default function HomePage() {
                     variant="outline"
                     className="text-lg rounded-full"
                   >
-                    Deploy your own
+                    Deploy
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </a>
